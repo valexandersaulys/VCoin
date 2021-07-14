@@ -165,45 +165,24 @@ contract("VCoin", async (accounts) => {
       );
     });
 
-    it("should not transfer if approve is not called first for `transfer()`", async () => {
-      const { token, baseAct } = this;
-      const otherAct = accounts[9];
-      const transferAmt = 10;
-
-      let success = await token.transfer.call(otherAct, transferAmt);
-      assert.equal(
-        success,
-        false,
-        "should not be able to transfer if we have not approved yet"
-      );
-      let tx = await token.transfer.sendTransaction(otherAct, transferAmt);
-      truffleAssert.eventNotEmitted(tx, "Transfer");
-    });
-
     it("should throw if amount is larger than the user has", async () => {
       const { token, baseAct, otherAct } = this;
       const transferAmt = (await token.balanceOf.call(baseAct)) + 1;
       await truffleAssert.fails(token.transfer(otherAct, transferAmt));
     });
 
-    it("should successfully transfer if approve is called first & have correct allowance() for `transfer()`", async () => {
+    it("`transfer()` should work with or without approval", async () => {
       const { token, baseAct, otherAct } = this;
       const baseActBalance = await token.balanceOf.call(baseAct);
       const otherActBalance = await token.balanceOf.call(otherAct);
-      const approvalAmt = 15;
       const transferAmt = 10;
 
-      let approval = await token.approve.call(otherAct, approvalAmt);
-      assert.equal(approval, true);
-      let tx = await token.approve.sendTransaction(otherAct, approvalAmt);
-      truffleAssert.eventEmitted(tx, "Approval");
-
       let success = await token.transfer.call(otherAct, transferAmt);
-      tx = await token.transfer.sendTransaction(otherAct, transferAmt);
+      let tx = await token.transfer.sendTransaction(otherAct, transferAmt);
       assert.equal(
         success,
         true,
-        "transfer should successfully return after approval"
+        "transfer should successfully return with or without approval"
       );
       truffleAssert.eventEmitted(tx, "Transfer", (ev) => {
         return (
@@ -223,13 +202,6 @@ contract("VCoin", async (accounts) => {
         Number(otherActBalance) + transferAmt,
         otherActBalanceAfter,
         "other account balance is incorrect after transfer"
-      );
-
-      const remainingAllowance = await token.allowance.call(baseAct, otherAct);
-      assert.equal(
-        approvalAmt - transferAmt,
-        remainingAllowance,
-        "remaining allowance is not correct"
       );
     });
 

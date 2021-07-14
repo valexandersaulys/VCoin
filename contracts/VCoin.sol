@@ -68,9 +68,8 @@ contract VCoin is IERC20 {
         public
         override
         returns (bool success) {
-        if (_accountToBalance[_from] < _value)
-            revert("Not enough funds to transfer");
-        if (_accountToApprovals[_from][_to] < _value)
+        require(_accountToBalance[_from] >= _value, "Not enough funds to transfer");
+        if(msg.sender != _from || _accountToApprovals[_from][_to] < _value)
             return false;
         // in the past we needed to worry about buffer overflows
         // but since Solidity 0.8.0 we do not        
